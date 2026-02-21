@@ -1,0 +1,30 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile proxyctl
+        run: python -m py_compile scripts/proxyctl.py
+
+      - name: Template init smoke
+        run: python scripts/proxyctl.py --config /tmp/proxy.toml init --template
+
+      - name: Generate compose smoke
+        run: python scripts/proxyctl.py --config /tmp/proxy.toml generate
+
+      - name: Doctor smoke
+        run: python scripts/proxyctl.py --config /tmp/proxy.toml doctor

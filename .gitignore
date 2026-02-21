@@ -1,0 +1,23 @@
+.DS_Store
+
+# Local runtime + secrets
+/.proxy/
+/proxy.toml
+/.fleet/
+/fleet.toml
+/.env
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs + temp files
+*.log
+*.tmp
+
+# Editor artifacts
+.idea/
+.vscode/
+*.swp
+*~

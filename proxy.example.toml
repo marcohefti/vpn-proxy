@@ -1,0 +1,29 @@
+[project]
+name = "vpn-proxy"
+timezone = "UTC"
+output_dir = ".proxy"
+local_networks = ["192.168.0.0/16", "172.16.0.0/12"]
+
+[defaults]
+image = "qmcgaw/gluetun:v3"
+protocol = "udp"
+mssfix = 1400
+http_proxy = true
+dot = false
+bind_address = "127.0.0.1"
+dns_address = "103.86.96.100"
+health_target_address = "103.86.96.100:53"
+enable_control_api = false
+control_port_start = 19000
+
+[provider]
+type = "nordvpn"
+username = "NORDVPN_SERVICE_USERNAME"
+password = "NORDVPN_SERVICE_PASSWORD"
+
+[tunnel_pool]
+count = 2
+regions = ["Finland", "Netherlands"]
+selector = "country"
+name_prefix = "proxy"
+port_start = 8111
