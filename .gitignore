@@ -3,8 +3,6 @@
 # Local runtime + secrets
 /.proxy/
 /proxy.toml
-/.fleet/
-/fleet.toml
 /.env
 
 # Python artifacts

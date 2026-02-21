@@ -30,7 +30,7 @@ chmod +x proxyctl
 ## Quick Start
 
 ```bash
-./proxyctl init --provider nordvpn
+./proxyctl init
 ./proxyctl up
 ./proxyctl status
 ./proxyctl check
@@ -45,7 +45,7 @@ Stop:
 ## Command Surface
 
 ```bash
-./proxyctl init --provider nordvpn
+./proxyctl init
 ./proxyctl edit
 ./proxyctl generate
 ./proxyctl up
@@ -54,6 +54,12 @@ Stop:
 ./proxyctl endpoints
 ./proxyctl doctor
 ./proxyctl check
+```
+
+Optional provider override:
+
+```bash
+./proxyctl init --provider gluetun
 ```
 
 Common flags:
