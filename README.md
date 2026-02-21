@@ -68,6 +68,7 @@ Common flags:
 - `init --template`
 - `up --wait`
 - `up --wait --wait-timeout 180`
+- `up --wait --restart-retries 4 --restart-backoff 5`
 - `down --remove-volumes`
 - `check --url https://api.ipify.org --timeout 20`
 
@@ -120,6 +121,7 @@ Per-proxy connectivity check:
 - `CONNECT tunnel failed, response 503` -> container is up but tunnel handshake is still in progress.
 - One proxy unhealthy while others are healthy -> region-specific issue; change `[tunnel_pool].regions`.
 - Need strict startup gating -> run `./proxyctl up --wait`.
+- Need auto-restart on bad startup handshakes -> run `./proxyctl up --wait --restart-retries 4`.
 
 ## Generated Artifacts
 

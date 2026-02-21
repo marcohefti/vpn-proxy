@@ -1065,6 +1065,22 @@ def print_compose_failure_logs(compose_path: Path, statuses: dict[str, str]) -> 
         subprocess.run(["docker", "logs", "--tail", "60", name], check=False)
 
 
+def unhealthy_container_names(statuses: dict[str, str]) -> list[str]:
+    return sorted(name for name, status in statuses.items() if status not in {"healthy", "none"})
+
+
+def restart_containers(container_names: list[str]) -> bool:
+    if not container_names:
+        return True
+    print(f"restarting unhealthy container(s): {', '.join(container_names)}")
+    for name in container_names:
+        process = subprocess.run(["docker", "restart", name], check=False)
+        if process.returncode != 0:
+            print(f"error: failed to restart container {name}", file=sys.stderr)
+            return False
+    return True
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     destination = Path(args.config).resolve()
     existed_before = destination.exists()
@@ -1118,8 +1134,38 @@ def cmd_up(args: argparse.Namespace) -> int:
     if code != 0:
         return code
 
+    if args.restart_retries < 0:
+        abort("--restart-retries must be >= 0")
+    if args.restart_backoff < 0:
+        abort("--restart-backoff must be >= 0")
+
     if args.wait:
-        ok, statuses = wait_for_compose_healthy(result.compose_path, timeout_seconds=args.wait_timeout)
+        total_attempts = args.restart_retries + 1
+        statuses: dict[str, str] = {}
+        ok = False
+        for attempt in range(1, total_attempts + 1):
+            ok, statuses = wait_for_compose_healthy(result.compose_path, timeout_seconds=args.wait_timeout)
+            if ok:
+                break
+            failing = unhealthy_container_names(statuses)
+            print(
+                f"startup health attempt {attempt}/{total_attempts} failed ({len(failing)} unhealthy container(s))",
+                file=sys.stderr,
+            )
+            for name in failing:
+                print(f"- {name}: {statuses[name]}", file=sys.stderr)
+            if attempt == total_attempts:
+                break
+            if not restart_containers(failing):
+                print_compose_failure_logs(result.compose_path, statuses)
+                return 1
+            if args.restart_backoff > 0:
+                print(
+                    f"waiting {args.restart_backoff:.1f}s before next health attempt",
+                    file=sys.stderr,
+                )
+                time.sleep(args.restart_backoff)
+
         if not ok:
             print("error: proxy stack started but did not become healthy in time", file=sys.stderr)
             for name, status in sorted(statuses.items()):
@@ -1312,6 +1358,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=90,
         help="seconds to wait for healthy containers (default: 90)",
+    )
+    up_parser.add_argument(
+        "--restart-retries",
+        type=int,
+        default=2,
+        help="restart unhealthy containers this many times while waiting (default: 2)",
+    )
+    up_parser.add_argument(
+        "--restart-backoff",
+        type=float,
+        default=3.0,
+        help="seconds to wait after each unhealthy restart cycle (default: 3)",
     )
     up_parser.set_defaults(wait=False)
     up_parser.set_defaults(func=cmd_up)
